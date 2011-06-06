@@ -78,7 +78,7 @@
 }
 
 - (void) receivedNewTweets:(NSArray *) tweets {
-	Tweet *lastTweet = [tweets lastObject];
+	Tweet *lastTweet = [tweets objectAtIndex:0];
 	[lblText setText:lastTweet.content];
 	
 	NSDate *dt = [self dateFromTwitter:lastTweet.createdAt];
