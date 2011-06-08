@@ -23,9 +23,11 @@
 
 @interface TwitterStatusUpdate : NSObject {
 	id<TwitterStatusUpdateDelegate> delegate;
+    NSString *messageToReturnFirstTime;
 }
 
 @property (assign) id<TwitterStatusUpdateDelegate> delegate;
+@property (nonatomic,retain) NSString *messageToReturnFirstTime;
 
 - (NSNumber *) lastKnownTweetId;
 - (void) updateForUsername:(NSString *) username;

@@ -11,7 +11,7 @@
 
 @implementation TwitterStatusView
 
-@synthesize imgBird, lblTime, lblText, statusUpdate;
+@synthesize imgBird, lblTime, lblText, statusUpdate, messageToReturnFirstTime;
 
 - (id) init {
 	return [self initWithFrame:CGRectMake(0, 0, 320, 100)];
@@ -38,58 +38,79 @@
 		[lblTime setTextColor:[UIColor lightGrayColor]];
 		[lblTime setOpaque:NO];
 		[lblTime setBackgroundColor:[UIColor clearColor]];
-		[lblTime setText:@"Time"];
 		[self addSubview:lblTime];
     }
 	
 
-	CGRect f = self.frame;
-	f.origin.y = -100;
-	self.frame = f;
+    [self resetAnimationState];
 	
     return self;
+}
+
+- (void) resetAnimationState {
+    CGRect f = self.frame;
+	f.origin.y = -50;
+	self.frame = f;
+    self.layer.anchorPoint = CGPointMake(0.5, 0);
+    self.layer.anchorPointZ = 0;
+    self.layer.transform = CATransform3DMakeRotation(M_PI / 2, 1, 0, 0);   
+    self.alpha = 0;
+    
+    CATransform3D aTransform = CATransform3DIdentity;
+    float zDistance = 1000;
+    aTransform.m34 = 1.0 / -zDistance;	
+    [self layer].sublayerTransform = aTransform;
 }
 
 - (void) updateForUsername:(NSString *) username {
 	statusUpdate = [[TwitterStatusUpdate alloc] init];
 	statusUpdate.delegate = self;
+    if (messageToReturnFirstTime != nil) statusUpdate.messageToReturnFirstTime = messageToReturnFirstTime;
 	[statusUpdate updateForUsername:username];
 }
 
 - (void) show {
-	
-	CGRect frame = self.frame;
-	[UIView beginAnimations:@"slideDown" context:nil];
+	[UIView beginAnimations:@"swing1" context:nil];
 	[UIView setAnimationCurve:UIViewAnimationCurveEaseInOut];
 	[UIView setAnimationDuration:0.5];
-	frame.origin.y = 0;
-	self.frame = frame;
+    self.alpha = 1;
+    self.layer.transform = CATransform3DMakeRotation((M_PI / 2), 0, 0, 0);        
+    
 	[UIView commitAnimations];
 }
 
+
+
 - (void) hide {
-	CGRect frame = self.frame;
+
 	[UIView beginAnimations:@"slideDown" context:nil];
 	[UIView setAnimationCurve:UIViewAnimationCurveEaseInOut];
 	[UIView setAnimationDuration:0.5];
-	frame.origin.y = -100;
-	self.frame = frame;
+
+    self.alpha = 0;
+    self.layer.transform = CATransform3DMakeRotation(-(M_PI / 2), 1, 0, 0);   
 	[UIView commitAnimations];
 }
+
+
 
 - (void) receivedNewTweets:(NSArray *) tweets {
 	Tweet *lastTweet = [tweets objectAtIndex:0];
 	[lblText setText:lastTweet.content];
 	
-	NSDate *dt = [self dateFromTwitter:lastTweet.createdAt];
+    if (![lastTweet.content isEqualToString:messageToReturnFirstTime]) {
+        // Dont show a date when showind the first time message
+        NSDate *dt = [self dateFromTwitter:lastTweet.createdAt];
+        
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setTimeStyle:NSDateFormatterShortStyle];
+        [dateFormatter setDateStyle:NSDateFormatterMediumStyle];
+        
+        [dateFormatter setLocale:[NSLocale currentLocale]];
+        lblTime.text = [dateFormatter stringFromDate:dt];
+        [dateFormatter release];
+    }
 
-	NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-	[dateFormatter setTimeStyle:NSDateFormatterShortStyle];
-	[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
-	
-	[dateFormatter setLocale:[NSLocale currentLocale]];
-	lblTime.text = [dateFormatter stringFromDate:dt];
-	[dateFormatter release];
 
 	[self show];	
 	[self performSelector:@selector(hide) withObject:nil afterDelay:kDelayUntilHidingTweetWindow];
@@ -100,6 +121,7 @@
 	[lblText release];
 	[lblTime release];
 	[statusUpdate release];
+    [messageToReturnFirstTime release];
     [super dealloc];
 }
 

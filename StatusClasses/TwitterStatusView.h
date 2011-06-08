@@ -17,16 +17,20 @@
 	UILabel *lblTime;
 	
 	TwitterStatusUpdate *statusUpdate;
+    NSString *messageToReturnFirstTime;
+
 }
 
 @property (assign) UIImageView *imgBird;
 @property (assign) UILabel *lblText;
 @property (assign) UILabel *lblTime;
 @property (assign) TwitterStatusUpdate *statusUpdate;
+@property (nonatomic,retain) NSString *messageToReturnFirstTime;
 
 - (void) updateForUsername:(NSString *) username;
 - (void) show;
 - (void) hide;
 - (NSDate*)dateFromTwitter:(NSString*)str;
+- (void) resetAnimationState;
 
 @end

@@ -13,7 +13,7 @@
 @implementation TwitterStatusUpdate
 
 
-@synthesize delegate;
+@synthesize delegate, messageToReturnFirstTime;
 
 
 - (NSNumber *) lastKnownTweetId {
@@ -64,11 +64,29 @@
 		[newTweets addObject:t];
 		[t release];		
 	}
-	
+
+	BOOL isFirstRequest = ([[self lastKnownTweetId] intValue]==0);	
+    
+    if (isFirstRequest && (messageToReturnFirstTime != nil)) {
+        Tweet *t = [[Tweet alloc] init];
+        t.content = messageToReturnFirstTime;
+        
+        if ([delegate respondsToSelector:@selector(receivedNewTweets:)]) [delegate receivedNewTweets:[NSArray arrayWithObject:t]];
+        [t release];
+        
+        [[NSUserDefaults standardUserDefaults] setObject:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        return;
+    }
+    
+    // Just for testing
+    
+    
+    
 	// Nothing new - let's go back
 	if ([newTweets count]==0) return;
 	
-	BOOL isFirstRequest = ([[self lastKnownTweetId] intValue]==0);
+
 	
 	[[NSUserDefaults standardUserDefaults] setObject:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
 	[[NSUserDefaults standardUserDefaults] synchronize];
@@ -95,6 +113,11 @@
 
 - (void)requestFailed:(ASIHTTPRequest *)request {
 	NSLog(@"Faiiil");
+}
+
+- (void) dealloc {
+    [messageToReturnFirstTime release];
+    [super dealloc];
 }
 
 @end
