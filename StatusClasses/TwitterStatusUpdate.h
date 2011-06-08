@@ -7,7 +7,7 @@
 //
 
 #define kDefaultsNameForLastKnownTweet @"LAST_KNOWN_TWEET_ID"
-#define kSendLastTweetWhenFirstUsing YES
+#define kSendLastTweetWhenFirstUsing NO
 #define kDelayUntilHidingTweetWindow 5
 
 
@@ -29,7 +29,7 @@
 @property (assign) id<TwitterStatusUpdateDelegate> delegate;
 @property (nonatomic,retain) NSString *messageToReturnFirstTime;
 
-- (NSNumber *) lastKnownTweetId;
+- (double) lastKnownTweetId;
 - (void) updateForUsername:(NSString *) username;
 
 @end

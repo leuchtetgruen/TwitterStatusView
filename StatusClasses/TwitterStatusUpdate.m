@@ -16,18 +16,15 @@
 @synthesize delegate, messageToReturnFirstTime;
 
 
-- (NSNumber *) lastKnownTweetId {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	NSNumber *ret = [defaults objectForKey:kDefaultsNameForLastKnownTweet];
-	
-	
-	if (ret != nil) return ret;
-	else return [NSNumber numberWithInt:0];
+- (double) lastKnownTweetId {
+    return [[NSUserDefaults standardUserDefaults] doubleForKey:kDefaultsNameForLastKnownTweet];
 }
 
 - (void) updateForUsername:(NSString *) username {
-	NSLog(@"Starting update... %@", username);
-	NSString *sinceId = [[self lastKnownTweetId] stringValue];
+	
+	NSString *sinceId = [NSString stringWithFormat:@"%.0f", [self lastKnownTweetId]];
+    NSLog(@"%f", [self lastKnownTweetId]);
+    NSLog(@"Starting update... %@ - %@", username, sinceId);
 	NSString *url;
 	if ([sinceId intValue]==0) url = [NSString stringWithFormat:@"http://api.twitter.com/1/statuses/user_timeline.json?screen_name=%@", username];
 	else url = [NSString stringWithFormat:@"http://api.twitter.com/1/statuses/user_timeline.json?screen_name=%@&since_id=%@", username, sinceId];
@@ -46,9 +43,12 @@
 	
 	SBJsonParser *parse = [[SBJsonParser alloc] init];
 	NSMutableArray *aTweets = [parse objectWithString:responseString];
+    
+
 	
 	NSMutableArray *newTweets = [[NSMutableArray alloc] init];
-	NSNumber *maxTweetId = [NSNumber numberWithInt:0];
+    double maxTweetId = 0;
+
 	for (NSDictionary *dict in aTweets) {
 		if ([dict isKindOfClass:[NSString class]]) {
 			// not a valid response - possibly no new tweets
@@ -59,13 +59,17 @@
 		Tweet *t = [[Tweet alloc] init];
 		[t fillWithDict:dict];
 		
-		if ([maxTweetId compare:t.tweetId] == NSOrderedAscending) maxTweetId = t.tweetId;
+        double tD = [t.tweetId doubleValue];
+        NSLog(@"max %0.f - t %0.f", maxTweetId, tD);
+        
+        if (tD > maxTweetId) maxTweetId = tD;
+
 		
 		[newTweets addObject:t];
 		[t release];		
 	}
 
-	BOOL isFirstRequest = ([[self lastKnownTweetId] intValue]==0);	
+	BOOL isFirstRequest = ([self lastKnownTweetId]==0);	
     
     if (isFirstRequest && (messageToReturnFirstTime != nil)) {
         Tweet *t = [[Tweet alloc] init];
@@ -74,21 +78,19 @@
         if ([delegate respondsToSelector:@selector(receivedNewTweets:)]) [delegate receivedNewTweets:[NSArray arrayWithObject:t]];
         [t release];
         
-        [[NSUserDefaults standardUserDefaults] setObject:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
+        NSLog(@"Writing %f as maxTweetId", maxTweetId);
+        [[NSUserDefaults standardUserDefaults] setDouble:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
         [[NSUserDefaults standardUserDefaults] synchronize];
         return;
     }
-    
-    // Just for testing
-    
     
     
 	// Nothing new - let's go back
 	if ([newTweets count]==0) return;
 	
 
-	
-	[[NSUserDefaults standardUserDefaults] setObject:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
+    NSLog(@"Writing %f as maxTweetId", maxTweetId);	
+    [[NSUserDefaults standardUserDefaults] setDouble:maxTweetId forKey:kDefaultsNameForLastKnownTweet];
 	[[NSUserDefaults standardUserDefaults] synchronize];
 
 	
